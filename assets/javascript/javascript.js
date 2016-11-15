@@ -31,7 +31,6 @@ $("#submit-record").on("click", function() {
 		firstTrain: firstTrain,
 		frequency: frequency,
 		dateAdded: firebase.database.ServerValue.TIMESTAMP,
-
 	});
 
 	// Return False to allow "enter"
@@ -41,18 +40,62 @@ $("#submit-record").on("click", function() {
 
 //get child data back
 trainSchedule.on("child_added",function(childSnapshot){
-	// console.log(childSnapshot.val().name);
-	// console.log(childSnapshot.val().role);
-	// console.log(childSnapshot.val().startDate);
-	// console.log(childSnapshot.val().rate);
 
-	var newStartDate = new Date(childSnapshot.val().firstTrain);
-	console.log("snapshot first train: " + childSnapshot.val().firstTrain);
-	console.log("newStartDate: " + newStartDate);
+	var nextTrain = getNextTrain(childSnapshot.val().firstTrain,childSnapshot.val().frequency);
+	var waitTime = getWaitTime(nextTrain)
+
+	nextTrain = nextTrain.format('LT');
 
 	$('tbody').append('<tr><td>' + childSnapshot.val().name +
-		'</td><td>' + childSnapshot.val().destination +'</td><td>'+
-		childSnapshot.val().frequency + '</td><td>')
-	// console.log(childSnapshot.val().startDate.getMonth());
+		'</td><td>' + childSnapshot.val().destination + '</td><td>' +
+		childSnapshot.val().frequency + '</td><td>' +
+		nextTrain + '</td><td>' +
+		waitTime + '</td>')
 
 })
+
+function convertMilTime(trainTime){
+	trainTime = trainTime.split(':');
+	var hours = parseInt(trainTime[0]);
+	var minutes = parseInt(trainTime[1]);
+	var timeValue = new Date();
+
+	timeValue.setHours(hours,minutes);
+	timeValue = moment(timeValue);
+
+	// show
+	return timeValue;
+}
+
+function getNextTrain(trainTime,frequency){
+	var now = moment(new Date());
+	console.log("now: " + now);
+	console.log("first train: " + trainTime);
+	var firstTrain = convertMilTime(trainTime);
+
+	// assume the first train hasn't come yet. . .
+	var nextTrain = firstTrain;
+
+	// . . . unless the first train was in the past
+	// then find the next train until it's in the future
+	var foundTrain = false;
+	if (nextTrain < now){	
+		do {
+		    nextTrain = moment(nextTrain).add(frequency, 'minutes');
+			//console.log("Next train time: " + nextTrain.format('LT'));
+			if (nextTrain > now){
+				foundTrain = true;
+			}
+			//console.log("foundTrain?" + foundTrain);
+		}
+		while (foundTrain === false);
+	}
+	return nextTrain;
+}
+
+function getWaitTime(trainTime){
+	var now = moment(new Date());
+	var waitTime = trainTime.diff(now, 'minutes');
+	//console.log('waitTime: ' + waitTime);
+	return waitTime;
+}
