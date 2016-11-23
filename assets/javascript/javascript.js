@@ -13,7 +13,6 @@ var database = firebase.database();
 
 var trainSchedule = database.ref("trainData");
 
-
 // Whenever a user clicks the click button
 $("#submit-record").on("click", function() {
 
@@ -25,6 +24,7 @@ $("#submit-record").on("click", function() {
 
 	$('.form-group').children('input').val('');
 
+	// add user inputs to the database
 	trainSchedule.push({
 		name: name,
 		destination: destination,
@@ -63,14 +63,11 @@ function convertMilTime(trainTime){
 	timeValue.setHours(hours,minutes);
 	timeValue = moment(timeValue);
 
-	// show
 	return timeValue;
 }
 
 function getNextTrain(trainTime,frequency){
 	var now = moment(new Date());
-	console.log("now: " + now);
-	console.log("first train: " + trainTime);
 	var firstTrain = convertMilTime(trainTime);
 
 	// assume the first train hasn't come yet. . .
@@ -82,11 +79,9 @@ function getNextTrain(trainTime,frequency){
 	if (nextTrain < now){	
 		do {
 		    nextTrain = moment(nextTrain).add(frequency, 'minutes');
-			//console.log("Next train time: " + nextTrain.format('LT'));
 			if (nextTrain > now){
 				foundTrain = true;
 			}
-			//console.log("foundTrain?" + foundTrain);
 		}
 		while (foundTrain === false);
 	}
@@ -96,6 +91,5 @@ function getNextTrain(trainTime,frequency){
 function getWaitTime(trainTime){
 	var now = moment(new Date());
 	var waitTime = trainTime.diff(now, 'minutes');
-	//console.log('waitTime: ' + waitTime);
 	return waitTime;
 }
